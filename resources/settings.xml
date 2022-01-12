@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    <category label="Settings">
+        <setting label="Login Settings" type="lsep"/>
+        <setting label="Username/Email" type="text" id="username" default=""/>
+        <setting label="Password" type="text" id="password" option="hidden"  enable="!eq(-1,)" default=""/>
+        <setting label="M3U Directory" type="folder" id="folder" source="auto" option="writeable"/>
+        <setting label="Enable M3U Creation Message" type="bool" id="notification" default="true"/>
+    </category>
+</settings>
