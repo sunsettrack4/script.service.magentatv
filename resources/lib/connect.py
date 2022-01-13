@@ -1,6 +1,7 @@
-import os, requests, xbmc, xbmcaddon
+import requests, xbmc, xbmcaddon
 from bs4 import BeautifulSoup
 from uuid import uuid4
+import codecs
 
 
 # ADDON INFO
@@ -162,7 +163,7 @@ def create_m3u(ch_list, session, directory):
     mapping_url = "https://github.com/sunsettrack4/config_files/raw/master/tkm_channels.json"
     mapping = requests.get(mapping_url).json()
 
-    with open(f"{directory}/magenta.m3u", "w") as file:
+    with codecs.open(f"{directory}/magenta.m3u", "w", encoding="latin-1") as file:
          file.write("#EXTM3U\n")
          for i in ch_list.keys():
              if ch_list[i].get("playurl"):
