@@ -113,7 +113,7 @@ def login_process(__username, __password):
                 break
         
         x = x + 1
-        if x > 3:
+        if x > 8:
             raise Exception("Error: Authentication failure")
              
     
@@ -135,7 +135,7 @@ def get_channel_list(session):
 
     req = requests.post(url, data=data, headers=header, cookies=epg_cookies)
 
-    ch_list =  {i["contentId"]: {"name": i["name"], "img": i["pictures"][0]["href"]} for i in req.json()["channellist"]}
+    ch_list =  {i["contentId"]: {"name": i["name"], "img": i["pictures"][0]["href"], "media": {m["mediaId"]: m["externalCode"] for m in i["physicalChannels"]}} for i in req.json()["channellist"]}
     
     request_string = ""
     for i in ch_list.keys():
@@ -150,9 +150,16 @@ def get_channel_list(session):
     req = requests.post(url, data=data, headers=header, cookies=epg_cookies)
 
     for i in req.json()["channelDynamicList"]:
+        a = dict()
         for p in i["physicalChannels"]:
-            if ".mpd?" in p.get("playurl", ""):
-                ch_list[i["contentId"]]["playurl"] = p["playurl"]
+            if "DASH_OTT-HD" in ch_list[i["contentId"]]["media"][p["mediaId"]] and p.get("playurl"):
+                a["HD"] = p["playurl"]
+            elif "DASH_OTT-SD" in ch_list[i["contentId"]]["media"][p["mediaId"]] and p.get("playurl"):
+                a["SD"] = p["playurl"]
+        if a.get("HD"):
+            ch_list[i["contentId"]]["playurl"] = a["HD"]
+        elif a.get("SD"):
+            ch_list[i["contentId"]]["playurl"] = a["SD"]
 
     return ch_list
 
