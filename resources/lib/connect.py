@@ -1,4 +1,4 @@
-import requests, xbmc, xbmcaddon
+import requests, xbmc, xbmcaddon, xbmcvfs
 from bs4 import BeautifulSoup
 from uuid import uuid4
 import codecs
@@ -6,7 +6,7 @@ import codecs
 
 # ADDON INFO
 __addon__ = xbmcaddon.Addon()
-data_dir = xbmc.translatePath(__addon__.getAddonInfo('profile'))
+data_dir = xbmcvfs.translatePath(__addon__.getAddonInfo('profile'))
 
 # DEFAULT HEADER
 header = {
