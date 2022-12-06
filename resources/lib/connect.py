@@ -172,6 +172,16 @@ def get_channel_list(session):
     return ch_list
 
 
+def write_channel(file, license_url, device_id, tvg_id, tvg_logo, channel_name, url):
+    file.write("#KODIPROP:inputstreamclass=inputstream.adaptive\n")
+    file.write("#KODIPROP:inputstream.adaptive.manifest_type=mpd\n")
+    file.write("#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha\n")
+    file.write(
+        f"#KODIPROP:inputstream.adaptive.license_key={license_url}|deviceId={device_id}|R" + "{SSM}|\n")
+    file.write(f'#EXTINF:0001 tvg-id="{tvg_id}" tvg-logo="{tvg_logo}", {channel_name}\n')
+    file.write(f'{url}\n')
+
+
 def create_m3u(ch_list, session, directory):
     license_url = "https://vmxdrmfklb1.sfm.t-online.de:8063/"
 
@@ -180,18 +190,12 @@ def create_m3u(ch_list, session, directory):
 
     with codecs.open(f"{directory}/magenta.m3u", "w", encoding="latin-1") as file:
         file.write("#EXTM3U\n")
-        for i in ch_list.keys():
-            if ch_list[i].get("playurl"):
-                file.write("#KODIPROP:inputstreamclass=inputstream.adaptive\n")
-                file.write("#KODIPROP:inputstream.adaptive.manifest_type=mpd\n")
-                file.write("#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha\n")
-                file.write(
-                    f"#KODIPROP:inputstream.adaptive.license_key={license_url}|deviceId={session['deviceId']}|R" +
-                    "{SSM}|\n")
-                if mapping["channels"]["DE"].get(ch_list[i]["name"]):
-                    file.write(
-                        f'#EXTINF:0001 tvg-id="{mapping["channels"]["DE"][ch_list[i]["name"]]}" tvg-logo="{ch_list[i]["img"]}", {ch_list[i]["name"]}\n')
-                else:
-                    file.write(
-                        f'#EXTINF:0001 tvg-id="{ch_list[i]["name"]}" tvg-logo="{ch_list[i]["img"]}", {ch_list[i]["name"]}\n')
-                file.write(ch_list[i]["playurl"] + "\n")
+        for channel_id, ch in ch_list.items():
+            tvg_logo = ch["img"]
+            tvg_id = mapping["channels"]["DE"].get(ch["name"], ch["name"])
+            if "playurl" in ch:
+                write_channel(file, license_url, session['deviceId'], tvg_id, tvg_logo, ch["name"],
+                              ch["playurl"])
+            if "playurl_4k" in ch:
+                write_channel(file, license_url, session['deviceId'], tvg_id, tvg_logo, f"{ch['name']} UHD",
+                              ch["playurl_4k"])
