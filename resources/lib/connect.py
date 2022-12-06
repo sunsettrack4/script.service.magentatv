@@ -1,4 +1,6 @@
-import requests, xbmc, xbmcaddon
+import requests
+import xbmc
+import xbmcaddon
 from bs4 import BeautifulSoup
 from uuid import uuid4
 import codecs
@@ -24,7 +26,7 @@ def parse_input_values(content):
     for i in ref:
         if "xsrf" in i.get("name", "") or i.get("name", "") == "tid":
             f.update({i["name"]: i["value"]})
-    
+
     return f
 
 
@@ -33,7 +35,6 @@ def login_process(__username, __password):
 
     session = dict()
     uu_id = str(uuid4())
-    
 
     #
     # RETRIEVE SESSION DATA
@@ -44,7 +45,7 @@ def login_process(__username, __password):
     req = requests.get(url, headers=header)
     cookies = req.cookies.get_dict()
 
-    # STEP 2: SEND USERNAME/MAIL 
+    # STEP 2: SEND USERNAME/MAIL
     data = {"x-show-cancel": "false", "bdata": "", "pw_usr": __username, "pw_submit": "", "hidden_pwd": ""}
     data.update(parse_input_values(req.content))
 
@@ -61,17 +62,21 @@ def login_process(__username, __password):
 
     # STEP 4: RETRIEVE ACCESS TOKEN FOR USER
     url = "https://accounts.login.idm.telekom.com/oauth2/tokens"
-    data = {"scope": "openid", "code": code, "grant_type": "authorization_code", "redirect_uri": "https://web.magentatv.de/authn/idm", "client_id": "10LIVESAM30000004901NGTVMAGENTA000000000", "claims": '{"id_token":{"urn:telekom.com:all":{"essential":false}}}'}
+    data = {
+        "scope": "openid", "code": code, "grant_type": "authorization_code",
+        "redirect_uri": "https://web.magentatv.de/authn/idm", "client_id": "10LIVESAM30000004901NGTVMAGENTA000000000",
+        "claims": '{"id_token":{"urn:telekom.com:all":{"essential":false}}}'}
 
     req = requests.post(url, cookies=cookies, data=data, headers=header)
     bearer = req.json()
-    
+
     # STEP 5: UPDATE ACCESS TOKEN FOR TV/EPG
-    data = {"scope": "ngtvepg", "grant_type": "refresh_token", "refresh_token": bearer["refresh_token"], "client_id": "10LIVESAM30000004901NGTVMAGENTA000000000"}
+    data = {"scope": "ngtvepg", "grant_type": "refresh_token",
+            "refresh_token": bearer["refresh_token"], "client_id": "10LIVESAM30000004901NGTVMAGENTA000000000"}
 
     req = requests.post(url, cookies=cookies, data=data, headers=header)
     bearer = req.json()
-    
+
     # STEP 6: EPG GUEST AUTH - JSESSION
     url = "https://api.prod.sngtv.magentatv.de/EPG/JSON/Login?&T=Windows_chrome_86"
     data = {"userId": "Guest", "mac": "00:00:00:00:00:00"}
@@ -92,14 +97,15 @@ def login_process(__username, __password):
     while True:
         # 8.1: AUTHENTICATE
         url = "https://api.prod.sngtv.magentatv.de/EPG/JSON/DTAuthenticate"
-        data = '{"areaid":"1","cnonce":"aa29eb89d78894464ab9ad3e4797eff6","mac":"' + uu_id + '","preSharedKeyID":"NGTV000001","subnetId":"4901","templatename":"NGTV","terminalid":"' + uu_id + '","terminaltype":"WEB-MTV","terminalvendor":"WebTV","timezone":"Europe/Berlin","usergroup":"OTT_NONDTISP_DT","userType":"1","utcEnable":1,"accessToken":"' + f'{bearer["access_token"]}' + '","caDeviceInfo":[{"caDeviceId":"' + uu_id + '","caDeviceType":8}],"connectType":1,"osversion":"Windows 10","softwareVersion":"1.45.1","terminalDetail":[{"key":"GUID","value":"' + uu_id + '"},{"key":"HardwareSupplier","value":"WEB-MTV"},{"key":"DeviceClass","value":"TV"},{"key":"DeviceStorage","value":0},{"key":"DeviceStorageSize","value":0}]}'
+        data = '{"areaid":"1","cnonce":"aa29eb89d78894464ab9ad3e4797eff6","mac":"' + uu_id + '","preSharedKeyID":"NGTV000001","subnetId":"4901","templatename":"NGTV","terminalid":"' + uu_id + '","terminaltype":"WEB-MTV","terminalvendor":"WebTV","timezone":"Europe/Berlin","usergroup":"OTT_NONDTISP_DT","userType":"1","utcEnable":1,"accessToken":"' + \
+            f'{bearer["access_token"]}' + '","caDeviceInfo":[{"caDeviceId":"' + uu_id + '","caDeviceType":8}],"connectType":1,"osversion":"Windows 10","softwareVersion":"1.45.1","terminalDetail":[{"key":"GUID","value":"' + uu_id + '"},{"key":"HardwareSupplier","value":"WEB-MTV"},{"key":"DeviceClass","value":"TV"},{"key":"DeviceStorage","value":0},{"key":"DeviceStorageSize","value":0}]}'
 
         req = requests.post(url, data=data, headers=header, cookies=epg_cookies)
         user_data = req.json()
-        
+
         if "success" in user_data["retmsg"]:
             break
-        
+
         # 8.2: RETRIEVE AVAILABLE WEBTV DEVICE
         url = "https://api.prod.sngtv.magentatv.de/EPG/JSON/GetDeviceList"
         data = '{"deviceType":"2;0;5;17","userid":"' + user_data["userID"] + '"}'
@@ -111,16 +117,15 @@ def login_process(__username, __password):
             if i["deviceName"] == "WebTV":
                 uu_id = i["physicalDeviceId"]
                 break
-        
+
         x = x + 1
         if x > 8:
             raise Exception("Error: Authentication failure")
-             
-    
+
     # SETUP SESSION
     session.update({"deviceId": req.json()["caDeviceInfo"][0]["VUID"]})  # DEVICE ID
     session.update({"cookies": req.cookies.get_dict()})  # EPG SESSION COOKIES
-    
+
     # RETURN USER-SPECIFIC COOKIE VALUES
     return session
 
@@ -135,8 +140,9 @@ def get_channel_list(session):
 
     req = requests.post(url, data=data, headers=header, cookies=epg_cookies)
 
-    ch_list =  {i["contentId"]: {"name": i["name"], "img": i["pictures"][0]["href"], "media": {m["mediaId"]: m["externalCode"] for m in i["physicalChannels"]}} for i in req.json()["channellist"]}
-    
+    ch_list = {i["contentId"]: {"name": i["name"], "img": i["pictures"][0]["href"], "media": {
+        m["mediaId"]: m["externalCode"] for m in i["physicalChannels"]}} for i in req.json()["channellist"]}
+
     request_string = ""
     for i in ch_list.keys():
         request_string = request_string + '{"channelId":"' + i + '","type":"VIDEO_CHANNEL"},'
@@ -148,19 +154,21 @@ def get_channel_list(session):
     header.update({"X_CSRFToken": session["cookies"]["CSRFSESSION"]})
 
     req = requests.post(url, data=data, headers=header, cookies=epg_cookies)
+    dynamic_list = req.json()["channelDynamicList"]
 
-    for i in req.json()["channelDynamicList"]:
-        a = dict()
-        for p in i["physicalChannels"]:
-            if "DASH_OTT-HD" in ch_list[i["contentId"]]["media"][p["mediaId"]] and p.get("playurl"):
-                a["HD"] = p["playurl"]
-            elif "DASH_OTT-SD" in ch_list[i["contentId"]]["media"][p["mediaId"]] and p.get("playurl"):
-                a["SD"] = p["playurl"]
-        if a.get("HD"):
-            ch_list[i["contentId"]]["playurl"] = a["HD"]
-        elif a.get("SD"):
-            ch_list[i["contentId"]]["playurl"] = a["SD"]
-
+    for entry in dynamic_list:
+        ch = ch_list[entry['contentId']]
+        for pchannel in entry['physicalChannels']:
+            if "playurl" not in pchannel:
+                continue
+            playurl = pchannel['playurl']
+            manifest_name = ch["media"][pchannel['mediaId']]
+            if "DASH_OTT-FOUR_K" in manifest_name:
+                ch['playurl_4k'] = playurl
+            if "DASH_OTT-HD" in manifest_name:
+                ch['playurl'] = playurl
+            elif "DASH_OTT-SD" in manifest_name:
+                ch['playurl'] = playurl
     return ch_list
 
 
@@ -171,15 +179,19 @@ def create_m3u(ch_list, session, directory):
     mapping = requests.get(mapping_url).json()
 
     with codecs.open(f"{directory}/magenta.m3u", "w", encoding="latin-1") as file:
-         file.write("#EXTM3U\n")
-         for i in ch_list.keys():
-             if ch_list[i].get("playurl"):
+        file.write("#EXTM3U\n")
+        for i in ch_list.keys():
+            if ch_list[i].get("playurl"):
                 file.write("#KODIPROP:inputstreamclass=inputstream.adaptive\n")
                 file.write("#KODIPROP:inputstream.adaptive.manifest_type=mpd\n")
                 file.write("#KODIPROP:inputstream.adaptive.license_type=com.widevine.alpha\n")
-                file.write(f"#KODIPROP:inputstream.adaptive.license_key={license_url}|deviceId={session['deviceId']}|R" + "{SSM}|\n")
+                file.write(
+                    f"#KODIPROP:inputstream.adaptive.license_key={license_url}|deviceId={session['deviceId']}|R" +
+                    "{SSM}|\n")
                 if mapping["channels"]["DE"].get(ch_list[i]["name"]):
-                    file.write(f'#EXTINF:0001 tvg-id="{mapping["channels"]["DE"][ch_list[i]["name"]]}" tvg-logo="{ch_list[i]["img"]}", {ch_list[i]["name"]}\n')
+                    file.write(
+                        f'#EXTINF:0001 tvg-id="{mapping["channels"]["DE"][ch_list[i]["name"]]}" tvg-logo="{ch_list[i]["img"]}", {ch_list[i]["name"]}\n')
                 else:
-                    file.write(f'#EXTINF:0001 tvg-id="{ch_list[i]["name"]}" tvg-logo="{ch_list[i]["img"]}", {ch_list[i]["name"]}\n')
+                    file.write(
+                        f'#EXTINF:0001 tvg-id="{ch_list[i]["name"]}" tvg-logo="{ch_list[i]["img"]}", {ch_list[i]["name"]}\n')
                 file.write(ch_list[i]["playurl"] + "\n")
