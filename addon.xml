@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="script.service.magentatv" name="Magenta TV M3U Creator" version="1.0.3" provider-name="Jan-Luca Neumann">
+<addon id="script.service.magentatv" name="Magenta TV M3U Creator" version="1.0.4" provider-name="Jan-Luca Neumann">
   <requires>
       <import addon="xbmc.python" version="3.0.0"/>
       <import addon="script.module.beautifulsoup4"/>
