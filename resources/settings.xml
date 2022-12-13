@@ -6,5 +6,7 @@
         <setting label="Password" type="text" id="password" option="hidden"  enable="!eq(-1,)" default=""/>
         <setting label="M3U Directory" type="folder" id="folder" source="auto" option="writeable"/>
         <setting label="Enable M3U Creation Message" type="bool" id="notification" default="true"/>
+        <setting label="Enable WOW Entertainment Package" type="bool" id="e" default="false"/>
+        <setting label="Enable WOW Sports Package" type="bool" id="s" default="false"/>
     </category>
 </settings>

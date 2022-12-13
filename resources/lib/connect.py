@@ -130,7 +130,7 @@ def login_process(__username, __password):
     return session
 
 
-def get_channel_list(session):
+def get_channel_list(session, enable_e, enable_s):
     """Retrieve the Live TV channel list"""
 
     url = "https://api.prod.sngtv.magentatv.de/EPG/JSON/AllChannel"
@@ -156,17 +156,29 @@ def get_channel_list(session):
     req = requests.post(url, data=data, headers=header, cookies=epg_cookies)
     dynamic_list = req.json()["channelDynamicList"]
 
+    add_url = "https://raw.githubusercontent.com/sunsettrack4/script.service.magentatv/master/channels.json"
+    add_req = requests.get(add_url)
+    add_dict = add_req.json()
+
     for entry in dynamic_list:
         ch = ch_list[entry['contentId']]
         for pchannel in entry['physicalChannels']:
             if "playurl" not in pchannel:
-                continue
+                if enable_e == "true":
+                    if add_dict["e"].get(pchannel['mediaId']):
+                        ch['playurl'] = f"https://svc40.main.sl.t-online.de/LCID3221228{add_dict['e'][pchannel['mediaId']]}.originalserver.prod.sngtv.t-online.de/PLTV/88888888/224/3221228{add_dict['e'][pchannel['mediaId']]}/3221228{add_dict['e'][pchannel['mediaId']]}.mpd"
+                if enable_s == "true":
+                    if add_dict["s"].get(pchannel['mediaId']):
+                        ch['playurl'] = f"https://svc40.main.sl.t-online.de/LCID3221228{add_dict['s'][pchannel['mediaId']]}.originalserver.prod.sngtv.t-online.de/PLTV/88888888/224/3221228{add_dict['s'][pchannel['mediaId']]}/3221228{add_dict['s'][pchannel['mediaId']]}.mpd"
+                break
             playurl = pchannel['playurl']
             manifest_name = ch["media"][pchannel['mediaId']]
             if "DASH_OTT-FOUR_K" in manifest_name:
                 ch['playurl_4k'] = playurl
+                continue
             if "DASH_OTT-HD" in manifest_name:
                 ch['playurl'] = playurl
+                break
             elif "DASH_OTT-SD" in manifest_name:
                 ch['playurl'] = playurl
     return ch_list

@@ -11,6 +11,9 @@ __password = __addon__.getSetting("password")
 directory = __addon__.getSetting("folder")
 notification = __addon__.getSetting("notification")
 
+add_e = __addon__.getSetting("e")
+add_s = __addon__.getSetting("s")
+
 def run():
     if __login and __password and directory:
         try:
@@ -19,7 +22,7 @@ def run():
             xbmcgui.Dialog().notification(__addonname__, "Authentication failed, please check your credentials.", xbmcgui.NOTIFICATION_ERROR)
             session = False
         if session:
-            ch_list = connect.get_channel_list(session)
+            ch_list = connect.get_channel_list(session, add_e, add_s)
             connect.create_m3u(ch_list, session, directory)
             if notification == "true":
                 xbmcgui.Dialog().notification(__addonname__, "M3U Playlist created successfully!", xbmcgui.NOTIFICATION_INFO)
