@@ -1,6 +1,7 @@
-import requests, xbmcaddon, xbmcvfs
+import hashlib, requests, xbmcaddon, xbmcvfs
 
 from bs4 import BeautifulSoup
+from datetime import datetime
 from uuid import uuid4
 import codecs
 
@@ -34,6 +35,9 @@ def login_process(__username, __password):
 
     session = dict()
     uu_id = str(uuid4())
+    cnonce = hashlib.md5()
+    cnonce.update(f'{str(datetime.now().timestamp()).replace(".", "")[0:-3]}:00'.encode())
+    cnonce = cnonce.hexdigest()
 
     #
     # RETRIEVE SESSION DATA
@@ -85,7 +89,7 @@ def login_process(__username, __password):
 
     # STEP 7: EPG USER AUTH - ALL SESSIONS
     url = 'https://api.prod.sngtv.magentatv.de/EPG/JSON/Authenticate?SID=firstup&T=Windows_chrome_86'
-    data = '{"terminalid":"' + uu_id + '","mac":"' + uu_id + '","terminaltype":"WEBTV","utcEnable":1,"timezone":"UTC","userType":3,"terminalvendor":"Unknown","preSharedKeyID":"PC01P00002","cnonce":"aa29eb89d78894464ab9ad3e4797eff6"}'
+    data = '{"terminalid":"' + uu_id + '","mac":"' + uu_id + '","terminaltype":"WEBTV","utcEnable":1,"timezone":"UTC","userType":3,"terminalvendor":"Unknown","preSharedKeyID":"PC01P00002","cnonce":"' + cnonce + '"}'
     epg_cookies = {"JSESSIONID": j_session}
 
     req = requests.post(url, data=data, headers=header, cookies=epg_cookies)
@@ -97,7 +101,7 @@ def login_process(__username, __password):
         # 8.1: AUTHENTICATE
         url = "https://api.prod.sngtv.magentatv.de/EPG/JSON/DTAuthenticate"
 
-        data = '{"areaid":"1","cnonce":"aa29eb89d78894464ab9ad3e4797eff6","mac":"' + uu_id + '","preSharedKeyID":"NGTV000001","subnetId":"4901","templatename":"NGTV","terminalid":"' + uu_id + '","terminaltype":"WEB-MTV","terminalvendor":"WebTV","timezone":"Europe/Berlin","usergroup":"OTT_NONDTISP_DT","userType":"1","utcEnable":1,"accessToken":"' + \
+        data = '{"areaid":"1","cnonce":"' + cnonce + '","mac":"' + uu_id + '","preSharedKeyID":"NGTV000001","subnetId":"4901","templatename":"NGTV","terminalid":"' + uu_id + '","terminaltype":"WEB-MTV","terminalvendor":"WebTV","timezone":"Europe/Berlin","usergroup":"OTT_NONDTISP_DT","userType":"1","utcEnable":1,"accessToken":"' + \
             f'{bearer["access_token"]}' + '","caDeviceInfo":[{"caDeviceId":"' + uu_id + '","caDeviceType":8}],"connectType":1,"osversion":"Windows 10","softwareVersion":"1.63.2","terminalDetail":[{"key":"GUID","value":"' + uu_id + '"},{"key":"HardwareSupplier","value":"WEB-MTV"},{"key":"DeviceClass","value":"TV"},{"key":"DeviceStorage","value":0},{"key":"DeviceStorageSize","value":0}]}'
 
         req = requests.post(url, data=data, headers=header, cookies=epg_cookies)
