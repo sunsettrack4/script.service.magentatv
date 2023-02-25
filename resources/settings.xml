@@ -8,5 +8,6 @@
         <setting label="Enable M3U Creation Message" type="bool" id="notification" default="true"/>
         <setting label="Enable WOW Entertainment Package" type="bool" id="e" default="false"/>
         <setting label="Enable WOW Sports Package" type="bool" id="s" default="false"/>
+        <setting label="Enable DAZN Channels" type="bool" id="d" default="false"/>
     </category>
 </settings>

@@ -118,7 +118,7 @@ def login_process(__username, __password):
         device_data = req.json()
 
         for i in device_data["deviceList"]:
-            if i["deviceName"] == "WebTV":
+            if i.get("deviceName", "") == "WebTV":
                 uu_id = i["physicalDeviceId"]
                 break
 
@@ -134,7 +134,7 @@ def login_process(__username, __password):
     return session
 
 
-def get_channel_list(session, enable_e, enable_s):
+def get_channel_list(session, enable_e, enable_s, enable_d):
     """Retrieve the Live TV channel list"""
 
     url = "https://api.prod.sngtv.magentatv.de/EPG/JSON/AllChannel"
@@ -174,6 +174,9 @@ def get_channel_list(session, enable_e, enable_s):
                 if enable_s == "true":
                     if add_dict["s"].get(pchannel['mediaId']):
                         ch['playurl'] = f"https://svc40.main.sl.t-online.de/LCID3221228{add_dict['s'][pchannel['mediaId']]}.originalserver.prod.sngtv.t-online.de/PLTV/88888888/224/3221228{add_dict['s'][pchannel['mediaId']]}/3221228{add_dict['s'][pchannel['mediaId']]}.mpd"
+                if enable_d == "true":
+                    if add_dict["d"].get(pchannel['mediaId']):
+                        ch['playurl'] = f"https://svc40.main.sl.t-online.de/LCID3221228{add_dict['d'][pchannel['mediaId']]}.originalserver.prod.sngtv.t-online.de/PLTV/88888888/224/3221228{add_dict['d'][pchannel['mediaId']]}/3221228{add_dict['d'][pchannel['mediaId']]}.mpd"
                 break
             playurl = pchannel['playurl']
             manifest_name = ch["media"][pchannel['mediaId']]
